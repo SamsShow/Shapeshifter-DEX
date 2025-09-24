@@ -14,14 +14,15 @@ export default function Home() {
   const [activePersona, setActivePersona] = useState(null);
   const [trades, setTrades] = useState([]);
   const [status, setStatus] = useState('');
+  const [isSimMode, setIsSimMode] = useState(false);
 
   // Demo token address map (replace with real Sapphire addresses)
   const tokenMap = useMemo(() => ({
     ETH: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // placeholder for native
-    DAI: process.env.NEXT_PUBLIC_DAI || '',
-    USDC: process.env.NEXT_PUBLIC_USDC || '',
-    WBTC: process.env.NEXT_PUBLIC_WBTC || '',
-    UNI: process.env.NEXT_PUBLIC_UNI || '',
+    DAI: process.env.NEXT_PUBLIC_DAI || '0x0000000000000000000000000000000000000001',
+    USDC: process.env.NEXT_PUBLIC_USDC || '0x0000000000000000000000000000000000000002',
+    WBTC: process.env.NEXT_PUBLIC_WBTC || '0x0000000000000000000000000000000000000003',
+    UNI: process.env.NEXT_PUBLIC_UNI || '0x0000000000000000000000000000000000000004',
   }), []);
 
   useEffect(() => {
@@ -37,6 +38,10 @@ export default function Home() {
       if (addr) {
         const c = await getShapeshifter(addr);
         setContract(c);
+        try {
+          const router = await c.swapRouter();
+          setIsSimMode(router === '0x0000000000000000000000000000000000000000');
+        } catch {}
       }
     };
     init();
@@ -77,7 +82,7 @@ export default function Home() {
 
   const onCreatePersona = async (name) => {
     if (!contract) return;
-    setStatus('Creating persona...');
+    setStatus('Creating persona…');
     const meta = new TextEncoder().encode('opaque');
     const tx = await contract.createIdentity(name, meta);
     await tx.wait();
@@ -96,7 +101,7 @@ export default function Home() {
 
   const onSwitchPersona = async (id) => {
     if (!contract) return;
-    setStatus('Switching persona...');
+    setStatus('Switching persona…');
     await (await contract.switchIdentity(id)).wait();
     setActivePersonaId(id);
     const p = personas.find(x => x.id === id);
@@ -105,35 +110,57 @@ export default function Home() {
     setStatus('');
   };
 
+  const onMidTradeSwitch = async (id) => {
+    if (!contract) return;
+    await (await contract.midTradeSwitch(id, true)).wait();
+    setActivePersonaId(id);
+    const p = personas.find(x => x.id === id);
+    setActivePersona(p || null);
+  };
+
   const onSwap = async ({ inputToken, outputToken, amount }) => {
     if (!contract || !activePersonaId) return;
     const inAddr = tokenMap[inputToken];
     const outAddr = tokenMap[outputToken];
+
+    if (isSimMode) {
+      // No approvals needed and we can assume 18 decimals for demo math
+      setStatus('Swapping…');
+      const amt = BigInt(Math.floor(amount * 1e18));
+      const minOut = (amt * 98n) / 100n; // naive 2% slippage
+      const tx = await contract.swapTokens(inAddr, outAddr, amt.toString(), minOut.toString());
+      await tx.wait();
+      setStatus('');
+      await refreshTrades(activePersonaId);
+      return;
+    }
+
+    // Real mode: require configured addresses and approvals
     if (!inAddr || !outAddr) {
       alert('Token addresses not configured');
       return;
     }
-    setStatus('Approving...');
+
+    setStatus('Approving…');
     const ercIn = await getERC20(inAddr);
     const decimals = await ercIn.decimals();
     const amt = BigInt(Math.floor(amount * 10 ** decimals));
-    // Approve contract to pull tokens if using real router
     try {
       const tx1 = await ercIn.approve(contractAddress, amt.toString());
       await tx1.wait();
     } catch (e) {
       console.error(e);
     }
-    setStatus('Swapping...');
+    setStatus('Swapping…');
     const minOut = (amt * 98n) / 100n; // naive 2% slippage
     const tx2 = await contract.swapTokens(inAddr, outAddr, amt.toString(), minOut.toString());
-    const rc = await tx2.wait();
+    await tx2.wait();
     setStatus('');
     await refreshTrades(activePersonaId);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div>
       <Head>
         <title>Identity Shapeshifter DEX</title>
         <meta name="description" content="Privacy-first trading platform" />
@@ -141,50 +168,64 @@ export default function Home() {
       </Head>
 
       <main className="min-h-screen">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">Identity Shapeshifter DEX</h1>
-          <div>
-            {account ? (
-              <span className="px-3 py-1 bg-gray-100 rounded text-sm">{account.slice(0,6)}...{account.slice(-4)}</span>
-            ) : (
-              <button className="px-4 py-2 bg-primary-500 text-white rounded" onClick={async ()=>{
-                await window.ethereum?.request({ method: 'eth_requestAccounts' });
-                location.reload();
-              }}>Connect</button>
-            )}
-          </div>
-        </div>
-
-        <p className="text-xl mb-4">Trade with privacy using multiple personas on Oasis Sapphire</p>
-
-        {!contractAddress && (
-          <div className="p-3 mb-4 rounded bg-yellow-50 text-yellow-700 text-sm">
-            Set NEXT_PUBLIC_SHAPESHIFTER_ADDR in .env.local to enable on-chain actions.
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-1 bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold mb-4">Persona Management</h2>
-            <PersonaList personas={personas} activePersona={activePersonaId} onSwitchPersona={onSwitchPersona} onCreatePersona={onCreatePersona} />
-          </div>
-
-          <div className="md:col-span-2 space-y-8">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-2xl font-semibold mb-4">Token Swap</h2>
-              <SwapForm activePersona={activePersona} onSwap={onSwap} />
-              {status && <div className="mt-3 text-sm text-gray-600">{status}</div>}
+        {/* Top bar */}
+        <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-neutral-950/60 bg-neutral-950 border-b border-neutral-900">
+          <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">IS</div>
+              <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Identity Shapeshifter DEX</h1>
             </div>
+            <div className="flex items-center gap-3">
+              {personas?.length > 0 && (
+                <select
+                  value={activePersonaId || ''}
+                  onChange={(e) => onSwitchPersona(e.target.value)}
+                  className="input w-44"
+                >
+                  {personas.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              )}
+              {account ? (
+                <span className="chip">{account.slice(0,6)}…{account.slice(-4)}</span>
+              ) : (
+                <button className="btn btn-primary" onClick={async ()=>{
+                  await window.ethereum?.request({ method: 'eth_requestAccounts' });
+                  location.reload();
+                }}>Connect</button>
+              )}
+            </div>
+          </div>
+        </header>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
+        <section className="mx-auto max-w-6xl px-4 py-8">
+          {!contractAddress && (
+            <div className="mb-6 text-sm text-amber-300/90 bg-amber-500/10 border border-amber-400/30 rounded-lg p-3">
+              Set NEXT_PUBLIC_SHAPESHIFTER_ADDR in .env.local to enable on-chain actions.
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <aside className="md:col-span-1 card">
+              <div className="card-body">
+                <PersonaList personas={personas} activePersona={activePersonaId} onSwitchPersona={onSwitchPersona} onCreatePersona={onCreatePersona} />
+              </div>
+            </aside>
+
+            <div className="md:col-span-2 space-y-6">
+              <SwapForm activePersona={activePersona} onSwap={onSwap} personas={personas} onMidTradeSwitch={onMidTradeSwitch} />
               <TradeHistory activePersona={activePersona} trades={trades} />
+              {status && (
+                <div className="text-sm text-gray-400">{status}</div>
+              )}
             </div>
           </div>
-        </div>
+        </section>
       </main>
 
-      <footer className="mt-12 text-center">
-        <p>Built on Oasis Sapphire & Uniswap</p>
+      <footer className="mt-8 py-8 border-t border-neutral-900 text-center text-sm text-gray-500">
+        Built on Oasis Sapphire & Uniswap
       </footer>
     </div>
   );

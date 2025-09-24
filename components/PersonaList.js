@@ -6,55 +6,56 @@ export default function PersonaList({ personas, activePersona, onSwitchPersona, 
   const handleCreatePersona = (e) => {
     e.preventDefault();
     if (newPersonaName.trim()) {
-      onCreatePersona(newPersonaName);
+      onCreatePersona(newPersonaName.trim());
       setNewPersonaName('');
     }
   };
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Your Personas</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400">Personas</h3>
       
       {/* List of personas */}
       <div className="space-y-2">
         {personas && personas.length > 0 ? (
           personas.map((persona) => (
-            <div 
+            <button
+              type="button"
               key={persona.id}
-              className={`p-3 rounded-lg cursor-pointer transition flex items-center space-x-3 ${
-                persona.id === activePersona ? 'bg-primary-100 border border-primary-300' : 'bg-gray-100 hover:bg-gray-200'
+              className={`w-full text-left p-2.5 rounded-lg transition flex items-center gap-3 border ${
+                persona.id === activePersona
+                  ? 'bg-neutral-900/60 border-white/30'
+                  : 'bg-neutral-900 border-neutral-800 hover:bg-neutral-800'
               }`}
               onClick={() => onSwitchPersona(persona.id)}
             >
-              <div className="w-8 h-8 rounded-full bg-primary-500 text-white flex items-center justify-center">
-                {persona.name.charAt(0).toUpperCase()}
+              <div className="w-8 h-8 rounded-full bg-white text-neutral-900 flex items-center justify-center font-semibold">
+                {persona.name?.charAt(0)?.toUpperCase() || '?'}
               </div>
-              <span className="font-medium">{persona.name}</span>
+              <span className="font-medium text-gray-100">{persona.name}</span>
               {persona.id === activePersona && (
-                <span className="ml-auto text-xs px-2 py-1 bg-primary-500 text-white rounded-full">
-                  Active
-                </span>
+                <span className="ml-auto chip">Active</span>
               )}
-            </div>
+            </button>
           ))
         ) : (
-          <div className="text-gray-500 text-center py-4">No personas yet</div>
+          <div className="text-gray-500 text-center py-6 border border-dashed border-neutral-800 rounded-lg">No personas yet</div>
         )}
       </div>
       
       {/* Create new persona form */}
       <form onSubmit={handleCreatePersona} className="mt-4">
-        <div className="flex space-x-2">
+        <div className="flex gap-2">
           <input
             type="text"
             value={newPersonaName}
             onChange={(e) => setNewPersonaName(e.target.value)}
             placeholder="New persona name"
-            className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="input"
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="btn btn-primary"
           >
             Create
           </button>

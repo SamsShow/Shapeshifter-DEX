@@ -1,16 +1,21 @@
 import { useState } from 'react';
 
-export default function SwapForm({ activePersona, onSwap }) {
+export default function SwapForm({ activePersona, onSwap, personas = [], onMidTradeSwitch }) {
   const [inputToken, setInputToken] = useState('ETH');
   const [outputToken, setOutputToken] = useState('DAI');
   const [amount, setAmount] = useState('');
+  const [midSwitchId, setMidSwitchId] = useState('');
   
   // Demo tokens for the prototype
   const tokens = ['ETH', 'DAI', 'USDC', 'WBTC', 'UNI'];
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (amount && inputToken && outputToken) {
+      // Optional mid-trade switch before executing swap
+      if (midSwitchId && onMidTradeSwitch) {
+        await onMidTradeSwitch(midSwitchId);
+      }
       onSwap({
         inputToken,
         outputToken,
@@ -26,96 +31,121 @@ export default function SwapForm({ activePersona, onSwap }) {
   };
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4">
-      <div className="mb-4">
-        <h3 className="text-lg font-medium mb-2">Trade with Persona</h3>
-        
-        {activePersona ? (
-          <div className="flex items-center space-x-2 text-sm">
-            <div className="w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center">
-              {activePersona.name.charAt(0).toUpperCase()}
-            </div>
-            <span className="font-medium">{activePersona.name}</span>
-          </div>
-        ) : (
-          <div className="text-yellow-600 text-sm">
-            No active persona selected
-          </div>
-        )}
-      </div>
-      
-      <form onSubmit={handleSubmit}>
-        {/* Input token */}
+    <div className="card">
+      <div className="card-body">
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            From
-          </label>
-          <div className="flex space-x-2">
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.0"
-              className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              disabled={!activePersona}
-              required
-            />
-            <select
-              value={inputToken}
-              onChange={(e) => setInputToken(e.target.value)}
-              className="px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-              disabled={!activePersona}
-            >
-              {tokens.filter(t => t !== outputToken).map(token => (
-                <option key={token} value={token}>{token}</option>
-              ))}
-            </select>
-          </div>
+          <h3 className="text-base font-semibold mb-2 text-gray-200">Trade</h3>
+          
+          {activePersona ? (
+            <div className="flex items-center gap-2 text-sm text-gray-300">
+              <div className="w-6 h-6 rounded-full bg-white text-neutral-900 flex items-center justify-center font-semibold">
+                {activePersona.name.charAt(0).toUpperCase()}
+              </div>
+              <span className="font-medium">{activePersona.name}</span>
+              <span className="chip">Active persona</span>
+            </div>
+          ) : (
+            <div className="text-amber-400 text-sm">
+              No active persona selected
+            </div>
+          )}
         </div>
         
-        {/* Switch tokens button */}
-        <div className="flex justify-center my-2">
-          <button 
-            type="button" 
-            onClick={handleTokenSwitch}
-            className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
-            disabled={!activePersona}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Input token */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">
+              From
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.0"
+                className="input"
+                disabled={!activePersona}
+                required
+              />
+              <select
+                value={inputToken}
+                onChange={(e) => setInputToken(e.target.value)}
+                className="input w-32"
+                disabled={!activePersona}
+              >
+                {tokens.filter(t => t !== outputToken).map(token => (
+                  <option key={token} value={token}>{token}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          {/* Switch tokens button */}
+          <div className="flex justify-center">
+            <button 
+              type="button" 
+              onClick={handleTokenSwitch}
+              className="btn btn-ghost w-8 h-8 rounded-full p-0"
+              disabled={!activePersona}
+            >
+              ⇅
+            </button>
+          </div>
+          
+          {/* Output token */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">
+              To (estimated)
+            </label>
+            <div className="flex gap-2">
+              <div className="input bg-neutral-900/70 border-dashed text-gray-300">
+                {amount ? parseFloat(amount * 0.98).toFixed(6) : '0.0'}
+              </div>
+              <select
+                value={outputToken}
+                onChange={(e) => setOutputToken(e.target.value)}
+                className="input w-32"
+                disabled={!activePersona}
+              >
+                {tokens.filter(t => t !== inputToken).map(token => (
+                  <option key={token} value={token}>{token}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Mid-trade switch (demo) */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">
+              Mid-trade switch (optional)
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={midSwitchId}
+                onChange={(e) => setMidSwitchId(e.target.value)}
+                className="input"
+                disabled={!activePersona}
+              >
+                <option value="">Keep current persona</option>
+                {personas.filter(p => p.id !== activePersona?.id).map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          {/* Submit button */}
+          <button
+            type="submit"
+            className="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!activePersona || !amount}
           >
-            ↓
+            Swap
           </button>
-        </div>
-        
-        {/* Output token */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            To (estimated)
-          </label>
-          <div className="flex space-x-2">
-            <div className="flex-1 px-3 py-2 border rounded-lg bg-gray-100">
-              {amount ? parseFloat(amount * 0.98).toFixed(6) : '0.0'}
-            </div>
-            <select
-              value={outputToken}
-              onChange={(e) => setOutputToken(e.target.value)}
-              className="px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-              disabled={!activePersona}
-            >
-              {tokens.filter(t => t !== inputToken).map(token => (
-                <option key={token} value={token}>{token}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-        {/* Submit button */}
-        <button
-          type="submit"
-          className="w-full py-2 px-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!activePersona || !amount}
-        >
-          Swap
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
