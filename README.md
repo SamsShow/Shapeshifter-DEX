@@ -12,21 +12,58 @@ A privacy-first trading platform built on Oasis Sapphire and Uniswap. This platf
 
 ## Tech Stack
 
-- **Frontend**: React/Next.js
+- **Frontend**: React/Next.js + TailwindCSS
 - **Smart Contracts**: Solidity on Oasis Sapphire
 - **Development**: Hardhat
 - **DEX Integration**: Uniswap Router
+
+## App routes
+
+- Landing page: `/` (marketing + CTA, subtle animations, rich footer)
+- Dashboard app: `/app` (personas, swap, per-persona history)
 
 ## Setup
 
 1. Clone the repository
 2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
+3. Copy example env files and edit values (see below)
+4. Start the development server: `npm run dev`
 
-## Smart Contract Development
+## Environment
 
-1. Compile contracts: `npm run compile`
-2. Deploy contracts: `npm run deploy`
+Create `.env.local` (Next.js) and `.env` (Hardhat):
+
+.env.local
+```
+NEXT_PUBLIC_SHAPESHIFTER_ADDR=0x...   # deployed on Sapphire; leave empty for simulation mode
+NEXT_PUBLIC_DAI=0x...
+NEXT_PUBLIC_USDC=0x...
+NEXT_PUBLIC_WBTC=0x...
+NEXT_PUBLIC_UNI=0x...
+```
+
+.env
+```
+PRIVATE_KEY=your_sapphire_private_key
+SAPPHIRE_TESTNET_URL=https://testnet.sapphire.oasis.dev
+# SAPPHIRE_MAINNET_URL=https://sapphire.oasis.io
+```
+
+Notes:
+- If `NEXT_PUBLIC_SHAPESHIFTER_ADDR` is unset, the UI operates in simulation mode (router == 0x0) with simple 2% slippage math and no approvals.
+- Set real token addresses for accurate approvals/routing when using a real router.
+
+## Smart Contracts
+
+- `contracts/IdentityShapeshifter.sol` integrates with a minimal Uniswap V3 router interface.
+- Owner can set router/fee with `setSwapRouter(router, fee)`.
+- If router is unset (`address(0)`), swaps run in simulation mode.
+
+### Hardhat
+
+- Compile: `npm run compile`
+- Test: `npx hardhat test`
+- Deploy: `npm run deploy` (expects `sapphire` network in `hardhat.config.js` and `.env` vars)
 
 ## Project Structure
 
@@ -41,34 +78,18 @@ A privacy-first trading platform built on Oasis Sapphire and Uniswap. This platf
 └── test/              # Contract tests
 ```
 
-## Contracts
+## UI notes
 
-- `contracts/IdentityShapeshifter.sol` integrates with a minimal Uniswap V3 router interface.
-- Owner can set router/fee with `setSwapRouter(router, fee)`.
-- If router is unset (address(0)), swaps run in simulation mode (2% slippage) to enable local tests and UI demo without mainnet forking.
+- Minimal gray/white dark theme with reusable utility classes: `card`, `btn`, `input`, `chip`.
+- Landing page includes SEO/Open Graph tags and subtle fade-up animations.
+- Accessibility: labeled form fields, `aria-label`s, focus-visible outlines.
+- Status messages surface as a small floating toast.
 
-## Environment
+## To-do (polish)
 
-Create `.env.local` (for Next.js) and `.env` (for Hardhat) as needed.
-
-.env.local
-- NEXT_PUBLIC_SHAPESHIFTER_ADDR=0x... // deployed on Sapphire
-- NEXT_PUBLIC_DAI=0x...
-- NEXT_PUBLIC_USDC=0x...
-- NEXT_PUBLIC_WBTC=0x...
-- NEXT_PUBLIC_UNI=0x...
-
-.env
-- PRIVATE_KEY=your_sapphire_key
-- SAPPHIRE_TESTNET_URL=https://testnet.sapphire.oasis.dev
-
-## Running
-
-- Install deps: `npm install`
-- Compile: `npm run compile`
-- Test: `npx hardhat test`
-- Deploy: `npm run deploy`
-- Start UI: `npm run dev`
+- Replace placeholder logos and social links.
+- Add more hover micro-interactions or staggered animations as needed.
+- Broaden mobile testing and ARIA coverage.
 
 ## Notes on privacy
 
