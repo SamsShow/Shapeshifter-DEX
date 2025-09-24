@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import PersonaList from '../components/PersonaList';
 import SwapForm from '../components/SwapForm';
 import TradeHistory from '../components/TradeHistory';
-import { getProvider, getShapeshifter, getERC20 } from '../lib/contract';
+import { getProvider, getShapeshifter, getERC20, getNetwork } from '../lib/contract';
 
 export default function Home() {
   const [account, setAccount] = useState(null);
@@ -15,6 +15,7 @@ export default function Home() {
   const [trades, setTrades] = useState([]);
   const [status, setStatus] = useState('');
   const [isSimMode, setIsSimMode] = useState(false);
+  const [chainId, setChainId] = useState(null);
 
   // Demo token address map (replace with real Sapphire addresses)
   const tokenMap = useMemo(() => ({
@@ -32,11 +33,20 @@ export default function Home() {
       const provider = getProvider();
       const signerAddr = await provider.getSigner().getAddress();
       setAccount(signerAddr);
+      let net;
+      try {
+        net = await getNetwork();
+        setChainId(Number(net?.chainId ?? 0));
+      } catch {}
       // Optionally set deployed address from env
       const addr = process.env.NEXT_PUBLIC_SHAPESHIFTER_ADDR || '';
       setContractAddress(addr);
+      // Do not construct contract if not on Sapphire
+      const onSapphire = [23294, 23295].includes(Number(net?.chainId));
+      if (!onSapphire) return;
       if (addr) {
         const c = await getShapeshifter(addr);
+        if (!c) return;
         setContract(c);
         try {
           const router = await c.swapRouter();
@@ -203,6 +213,13 @@ export default function Home() {
         </header>
 
         <section className="mx-auto max-w-6xl px-4 py-8">
+          {/* Network guard */}
+          {chainId && ![23294,23295].includes(chainId) && (
+            <div className="mb-6 text-sm text-amber-300/90 bg-amber-500/10 border border-amber-400/30 rounded-lg p-3">
+              Switch network to Oasis Sapphire (Testnet 23295 or Mainnet 23294) to enable confidential features.
+            </div>
+          )}
+
           {!contractAddress && (
             <div className="mb-6 text-sm text-amber-300/90 bg-amber-500/10 border border-amber-400/30 rounded-lg p-3">
               Set NEXT_PUBLIC_SHAPESHIFTER_ADDR in .env.local to enable on-chain actions.
