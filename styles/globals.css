@@ -100,6 +100,56 @@ html, body {
 @layer utilities {
   @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .animate-fade-up { animation: fade-up .5s ease-out forwards; }
+  
+  /* Custom Scrollbar Styles */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #525252 #262626;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #262626;
+    border-radius: 10px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #525252;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #737373;
+    transform: scale(1.1);
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:active {
+    background: #a3a3a3;
+  }
+  
+  .scrollbar-track-neutral-800\/50::-webkit-scrollbar-track {
+    background: rgba(38, 38, 38, 0.5);
+  }
+  
+  .scrollbar-thumb-neutral-600\/50::-webkit-scrollbar-thumb {
+    background: rgba(82, 82, 82, 0.5);
+  }
+  
+  .hover\:scrollbar-thumb-neutral-500\/70:hover::-webkit-scrollbar-thumb {
+    background: rgba(115, 115, 115, 0.7);
+  }
+  
+  .scrollbar-thumb-rounded-full::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+  }
+  
+  .scrollbar-track-rounded-full::-webkit-scrollbar-track {
+    border-radius: 9999px;
+  }
 }
 
 body {
