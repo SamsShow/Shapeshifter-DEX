@@ -16,6 +16,7 @@ export default function Home() {
   const [status, setStatus] = useState('');
   const [isSimMode, setIsSimMode] = useState(false);
   const [chainId, setChainId] = useState(null);
+  const [contractHealthMsg, setContractHealthMsg] = useState('');
 
   // Demo token address map (replace with real Sapphire addresses)
   const tokenMap = useMemo(() => ({
@@ -38,66 +39,73 @@ export default function Home() {
         cid = await getChainIdSafe();
         setChainId(Number(cid ?? 0));
       } catch {}
-      // Optionally set deployed address from env
       const addr = process.env.NEXT_PUBLIC_SHAPESHIFTER_ADDR || '';
       setContractAddress(addr);
+
       const onSapphire = [23294, 23295].includes(Number(cid));
       if (!onSapphire) return;
+
       if (addr) {
+        try {
+          const code = await provider.getCode(addr);
+          if (!code || code === '0x') {
+            setContractHealthMsg(`No contract found at ${addr} on chain ${Number(cid)}. Deploy first or clear NEXT_PUBLIC_SHAPESHIFTER_ADDR to use simulation.`);
+            return;
+          }
+        } catch (e) {
+          setContractHealthMsg('Failed to fetch contract code. Check RPC and address.');
+          return;
+        }
         const c = await getShapeshifter(addr);
         if (!c) return;
         setContract(c);
         try {
           const router = await c.swapRouter();
           setIsSimMode(router === '0x0000000000000000000000000000000000000000');
-        } catch {}
+        } catch (e) {
+          // If read fails, mark health message and skip further calls
+          setContractHealthMsg('Contract read failed. Ensure ABI/address match this deployment.');
+        }
       }
     };
     init();
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.ethereum) return;
-    const handler = () => window.location.reload();
-    window.ethereum.on?.('chainChanged', handler);
-    window.ethereum.on?.('accountsChanged', handler);
-    return () => {
-      window.ethereum.removeListener?.('chainChanged', handler);
-      window.ethereum.removeListener?.('accountsChanged', handler);
-    };
-  }, []);
-
-  useEffect(() => {
+    if (!contract || contractHealthMsg) return;
     const fetchPersonas = async () => {
-      if (!contract) return;
-      const ids = await contract.getIdentityIds();
-      const active = await contract.getActiveIdentity();
-      setActivePersonaId(active);
-      // Map to client objects: fetch names via getIdentity
-      const items = await Promise.all(ids.map(async (id) => {
-        const [name] = await contract.getIdentity(id);
-        return { id, name };
-      }));
-      setPersonas(items);
-      const ap = items.find(p => p.id === active);
-      setActivePersona(ap || null);
-      if (ap) await refreshTrades(ap.id);
+      try {
+        const ids = await contract.getIdentityIds();
+        const active = await contract.getActiveIdentity();
+        setActivePersonaId(active);
+        const items = await Promise.all(ids.map(async (id) => {
+          const [name] = await contract.getIdentity(id);
+          return { id, name };
+        }));
+        setPersonas(items);
+        const ap = items.find(p => p.id === active);
+        setActivePersona(ap || null);
+        if (ap) await refreshTrades(ap.id);
+      } catch (e) {
+        setContractHealthMsg('Unable to query personas. Verify the network and contract.');
+      }
     };
     fetchPersonas();
-  }, [contract]);
+  }, [contract, contractHealthMsg]);
 
   const refreshTrades = async (identityId) => {
     if (!contract || !identityId) return;
-    const history = await contract.getSwapHistory(identityId);
-    // Convert to UI trades; token symbols unknown, so leave addresses for now
-    const uiTrades = history.map(h => ({
-      inputToken: h.inputToken,
-      outputToken: h.outputToken,
-      amountIn: h.amountIn.toString(),
-      amountOut: h.amountOut.toString(),
-      timestamp: h.timestamp.toNumber(),
-    }));
-    setTrades(uiTrades);
+    try {
+      const history = await contract.getSwapHistory(identityId);
+      const uiTrades = history.map(h => ({
+        inputToken: h.inputToken,
+        outputToken: h.outputToken,
+        amountIn: h.amountIn.toString(),
+        amountOut: h.amountOut.toString(),
+        timestamp: h.timestamp.toNumber(),
+      }));
+      setTrades(uiTrades);
+    } catch {}
   };
 
   const onCreatePersona = async (name) => {
@@ -260,6 +268,12 @@ export default function Home() {
                 <button className="btn btn-ghost" onClick={() => switchToSapphire(false)}>Switch to Testnet</button>
                 <button className="btn btn-ghost" onClick={() => switchToSapphire(true)}>Switch to Mainnet</button>
               </div>
+            </div>
+          )}
+
+          {contractHealthMsg && (
+            <div className="mb-6 text-sm text-amber-300/90 bg-amber-500/10 border border-amber-400/30 rounded-lg p-3">
+              {contractHealthMsg}
             </div>
           )}
 
