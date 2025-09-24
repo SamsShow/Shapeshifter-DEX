@@ -217,8 +217,8 @@ export default function Home() {
   return (
     <div>
       <Head>
-        <title>Identity Shapeshifter DEX</title>
-        <meta name="description" content="Privacy-first trading platform" />
+        <title>ShadeSwap</title>
+        <meta name="description" content="Privacy-first DEX with anonymous trading personas" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -227,8 +227,8 @@ export default function Home() {
         <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-neutral-950/60 bg-neutral-950 border-b border-neutral-900">
           <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">IS</div>
-              <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Identity Shapeshifter DEX</h1>
+              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">SS</div>
+              <h1 className="text-lg sm:text-xl font-semibold tracking-tight">ShadeSwap</h1>
             </div>
             <div className="flex items-center gap-4">
               {personas?.length > 0 && (
@@ -303,8 +303,8 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">IS</div>
-              <span className="text-white font-semibold">Identity Shapeshifter</span>
+              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">SS</div>
+              <span className="text-white font-semibold">ShadeSwap</span>
             </div>
             <p className="text-sm text-gray-400 max-w-sm">Privacy-first trading with personas. Built on Oasis Sapphire & Uniswap.</p>
           </div>
@@ -325,7 +325,7 @@ export default function Home() {
             </ul>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-500 py-6 border-t border-neutral-900">© {new Date().getFullYear()} Identity Shapeshifter</div>
+        <div className="text-center text-xs text-gray-500 py-6 border-t border-neutral-900">© {new Date().getFullYear()} ShadeSwap</div>
       </footer>
 
       {/* Floating status toast */}

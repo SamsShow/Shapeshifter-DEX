@@ -2,9 +2,9 @@ import Head from 'next/head'
 import Link from 'next/link'
 
 export default function Landing() {
-  const title = 'Identity Shapeshifter DEX — Trade Privately'
+  const title = 'ShadeSwap — Trade Privately'
   const description = 'Privacy-first DEX with anonymous personas on Oasis Sapphire and Uniswap.'
-  const ogImage = 'https://dummyimage.com/1200x630/0a0a0a/e5e7eb&text=Identity+Shapeshifter+DEX'
+  const ogImage = 'https://dummyimage.com/1200x630/0a0a0a/e5e7eb&text=ShadeSwap'
 
   return (
     <div>
@@ -26,8 +26,8 @@ export default function Landing() {
       <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-neutral-950/60 bg-neutral-950 border-b border-neutral-900">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black" aria-hidden>IS</div>
-            <span className="text-base sm:text-lg font-semibold tracking-tight">Identity Shapeshifter</span>
+            <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black" aria-hidden>SS</div>
+            <span className="text-base sm:text-lg font-semibold tracking-tight">ShadeSwap</span>
           </div>
           <nav className="hidden sm:flex items-center gap-6 text-sm text-gray-300" aria-label="Primary">
             <a href="#features" className="hover:text-white">Features</a>
@@ -120,7 +120,7 @@ export default function Landing() {
 
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-4 py-12">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-6">Why Shapeshifter</h2>
+        <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-6">Why ShadeSwap</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {title:'Create Personas', desc:'Spin up multiple identities per wallet with confidential metadata stored on Sapphire.', icon:'🧩'},
@@ -215,8 +215,8 @@ export default function Landing() {
         <div className="mx-auto max-w-6xl px-4 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">IS</div>
-              <span className="text-white font-semibold">Identity Shapeshifter</span>
+              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">SS</div>
+              <span className="text-white font-semibold">ShadeSwap</span>
             </div>
             <p className="text-sm text-gray-400 max-w-sm">Privacy-first trading with personas. Built on Oasis Sapphire & Uniswap.</p>
           </div>
@@ -237,7 +237,7 @@ export default function Landing() {
             </ul>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-500 py-6 border-t border-neutral-900">© {new Date().getFullYear()} Identity Shapeshifter</div>
+        <div className="text-center text-xs text-gray-500 py-6 border-t border-neutral-900">© {new Date().getFullYear()} ShadeSwap</div>
       </footer>
 
       {/* Page animations (minimal) */}

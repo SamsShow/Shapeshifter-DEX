@@ -1,8 +1,8 @@
 {
-  "name": "identity-shapeshifter-dex",
+  "name": "shadeswap",
   "version": "0.1.0",
   "private": true,
-  "description": "Privacy-first trading platform built on Oasis Sapphire and Uniswap",
+  "description": "Privacy-first DEX with anonymous trading personas built on Oasis Sapphire and Uniswap",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

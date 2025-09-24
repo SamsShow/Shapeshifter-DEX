@@ -1,8 +1,8 @@
-# Identity Shapeshifter DEX MVP Rules and Guidelines
+# ShadeSwap MVP Rules and Guidelines
 
 ## Project Overview
 
-**Identity Shapeshifter DEX** is a privacy-first trading platform built on Oasis Sapphire and Uniswap. It allows users to create and trade with anonymous personas, decoupling their real wallet address from trading activities. This MVP is scoped for a 3-4 hour hackathon build, focusing on core features to demonstrate the concept.
+**ShadeSwap** is a privacy-first trading platform built on Oasis Sapphire and Uniswap. It allows users to create and trade with anonymous personas, decoupling their real wallet address from trading activities. This MVP is scoped for a 3-4 hour hackathon build, focusing on core features to demonstrate the concept.
 
 ## MVP Features
 
@@ -73,4 +73,4 @@
 - Ensure the MVP is memorable, funny, and technically legit for judges.
 - Keep future extensions (Persona NFTs, ZK proofs) in mind but out of MVP scope.
 
-This `currorrules.md` file serves as the blueprint for building the Identity Shapeshifter DEX MVP, ensuring all team members align on the vision and deliverables.
+This `currorrules.md` file serves as the blueprint for building the ShadeSwap MVP, ensuring all team members align on the vision and deliverables.
