@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import PersonaList from '../components/PersonaList';
 import SwapForm from '../components/SwapForm';
 import TradeHistory from '../components/TradeHistory';
-import { getProvider, getShapeshifter, getERC20, getNetwork } from '../lib/contract';
+import { getProvider, getShapeshifter, getERC20, getNetwork, getChainIdSafe } from '../lib/contract';
 
 export default function Home() {
   const [account, setAccount] = useState(null);
@@ -33,16 +33,15 @@ export default function Home() {
       const provider = getProvider();
       const signerAddr = await provider.getSigner().getAddress();
       setAccount(signerAddr);
-      let net;
+      let cid = null;
       try {
-        net = await getNetwork();
-        setChainId(Number(net?.chainId ?? 0));
+        cid = await getChainIdSafe();
+        setChainId(Number(cid ?? 0));
       } catch {}
       // Optionally set deployed address from env
       const addr = process.env.NEXT_PUBLIC_SHAPESHIFTER_ADDR || '';
       setContractAddress(addr);
-      // Do not construct contract if not on Sapphire
-      const onSapphire = [23294, 23295].includes(Number(net?.chainId));
+      const onSapphire = [23294, 23295].includes(Number(cid));
       if (!onSapphire) return;
       if (addr) {
         const c = await getShapeshifter(addr);
@@ -55,6 +54,17 @@ export default function Home() {
       }
     };
     init();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.ethereum) return;
+    const handler = () => window.location.reload();
+    window.ethereum.on?.('chainChanged', handler);
+    window.ethereum.on?.('accountsChanged', handler);
+    return () => {
+      window.ethereum.removeListener?.('chainChanged', handler);
+      window.ethereum.removeListener?.('accountsChanged', handler);
+    };
   }, []);
 
   useEffect(() => {
@@ -169,6 +179,33 @@ export default function Home() {
     await refreshTrades(activePersonaId);
   };
 
+  const switchToSapphire = async (mainnet = false) => {
+    const params = mainnet
+      ? {
+          chainId: '0x5afe', // 23294
+          chainName: 'Oasis Sapphire',
+          nativeCurrency: { name: 'ROSE', symbol: 'ROSE', decimals: 18 },
+          rpcUrls: ['https://sapphire.oasis.io'],
+          blockExplorerUrls: ['https://explorer.oasis.io/mainnet/sapphire']
+        }
+      : {
+          chainId: '0x5aff', // 23295
+          chainName: 'Oasis Sapphire Testnet',
+          nativeCurrency: { name: 'ROSE', symbol: 'ROSE', decimals: 18 },
+          rpcUrls: ['https://testnet.sapphire.oasis.dev'],
+          blockExplorerUrls: ['https://explorer.oasis.io/testnet/sapphire']
+        };
+    try {
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: params.chainId }] });
+    } catch (e) {
+      if (e?.code === 4902) {
+        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [params] });
+      } else {
+        console.error(e);
+      }
+    }
+  };
+
   return (
     <div>
       <Head>
@@ -215,8 +252,14 @@ export default function Home() {
         <section className="mx-auto max-w-6xl px-4 py-8">
           {/* Network guard */}
           {chainId && ![23294,23295].includes(chainId) && (
-            <div className="mb-6 text-sm text-amber-300/90 bg-amber-500/10 border border-amber-400/30 rounded-lg p-3">
-              Switch network to Oasis Sapphire (Testnet 23295 or Mainnet 23294) to enable confidential features.
+            <div className="mb-6 text-sm text-amber-300/90 bg-amber-500/10 border border-amber-400/30 rounded-lg p-3 flex items-center justify-between gap-3">
+              <span>
+                Detected chainId {chainId}. Switch to Oasis Sapphire (Testnet 23295 or Mainnet 23294) to enable confidential features.
+              </span>
+              <div className="flex gap-2">
+                <button className="btn btn-ghost" onClick={() => switchToSapphire(false)}>Switch to Testnet</button>
+                <button className="btn btn-ghost" onClick={() => switchToSapphire(true)}>Switch to Mainnet</button>
+              </div>
             </div>
           )}
 
