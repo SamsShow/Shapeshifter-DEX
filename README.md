@@ -1,6 +1,6 @@
-# Identity Shapeshifter DEX
+# ShadeSwap
 
-A privacy-first trading platform built on Oasis Sapphire and Uniswap. This platform allows users to create and trade with anonymous personas, decoupling their real wallet address from trading activities.
+A privacy-first DEX with anonymous trading personas built on Oasis Sapphire and Uniswap. This platform allows users to create and trade with anonymous personas, decoupling their real wallet address from trading activities.
 
 ## Features
 

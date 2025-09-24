@@ -1,4 +1,4 @@
-# Identity Shapeshifter Smart Contract
+# ShadeSwap Smart Contract
 
 This document describes the `IdentityShapeshifter` smart contract - a privacy-first trading platform built on Oasis Sapphire and integrated with Uniswap.
 

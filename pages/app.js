@@ -217,20 +217,20 @@ export default function Home() {
   return (
     <div>
       <Head>
-        <title>Identity Shapeshifter DEX</title>
-        <meta name="description" content="Privacy-first trading platform" />
+        <title>ShadeSwap</title>
+        <meta name="description" content="Privacy-first DEX with anonymous trading personas" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className="min-h-screen">
         {/* Top bar */}
         <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-neutral-950/60 bg-neutral-950 border-b border-neutral-900">
-          <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+          <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">IS</div>
-              <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Identity Shapeshifter DEX</h1>
+              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">SS</div>
+              <h1 className="text-lg sm:text-xl font-semibold tracking-tight">ShadeSwap</h1>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               {personas?.length > 0 && (
                 <select
                   aria-label="Active persona"
@@ -257,7 +257,7 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="mx-auto max-w-6xl px-4 py-8">
+        <section className="mx-auto max-w-7xl px-4 py-8">
           {/* Network guard */}
           {chainId && ![23294,23295].includes(chainId) && (
             <div className="mb-6 text-sm text-amber-300/90 bg-amber-500/10 border border-amber-400/30 rounded-lg p-3 flex items-center justify-between gap-3">
@@ -298,6 +298,36 @@ export default function Home() {
         </section>
       </main>
 
+       {/* Footer */}
+      <footer className="mt-8 border-t border-neutral-900">
+        <div className="mx-auto max-w-6xl px-4 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-md bg-white text-neutral-900 flex items-center justify-center font-black">SS</div>
+              <span className="text-white font-semibold">ShadeSwap</span>
+            </div>
+            <p className="text-sm text-gray-400 max-w-sm">Privacy-first trading with personas. Built on Oasis Sapphire & Uniswap.</p>
+          </div>
+          <div className="text-sm">
+            <div className="text-gray-300 font-medium mb-2">Product</div>
+            <ul className="space-y-1 text-gray-400">
+              <li><a className="hover:text-white" href="/app">Open App</a></li>
+              <li><a className="hover:text-white" href="#features">Features</a></li>
+              <li><a className="hover:text-white" href="#how">How it works</a></li>
+            </ul>
+          </div>
+          <div className="text-sm">
+            <div className="text-gray-300 font-medium mb-2">Community</div>
+            <ul className="space-y-1 text-gray-400">
+              <li><a className="hover:text-white" href="https://twitter.com" target="_blank" rel="noreferrer">Twitter</a></li>
+              <li><a className="hover:text-white" href="https://discord.com" target="_blank" rel="noreferrer">Discord</a></li>
+              <li><a className="hover:text-white" href="https://github.com" target="_blank" rel="noreferrer">GitHub</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="text-center text-xs text-gray-500 py-6 border-t border-neutral-900">© {new Date().getFullYear()} ShadeSwap</div>
+      </footer>
+
       {/* Floating status toast */}
       {status && (
         <div role="status" aria-live="polite" className="toast">
@@ -305,9 +335,6 @@ export default function Home() {
         </div>
       )}
 
-      <footer className="mt-8 py-8 border-t border-neutral-900 text-center text-sm text-gray-500">
-        Built on Oasis Sapphire & Uniswap
-      </footer>
     </div>
   );
 }
