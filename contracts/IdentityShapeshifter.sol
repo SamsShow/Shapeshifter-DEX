@@ -11,14 +11,14 @@ import "@oasisprotocol/sapphire-contracts/contracts/Sapphire.sol";
  */
 contract IdentityShapeshifter is Ownable {
     // Use Sapphire's encryption utilities
-    using Sapphire for bytes;
-    using Sapphire for bytes32;
-    using Sapphire for string;
+    // using Sapphire for bytes;
+    // using Sapphire for bytes32;
+    // using Sapphire for string;
 
     // Struct to represent a persona/identity
     struct Identity {
         string name;         // Plain text name
-        bytes encryptedData; // Encrypted metadata about this persona
+        bytes encryptedData; // Metadata about this persona (confidential at rest on Sapphire)
         bool exists;
     }
 
@@ -51,9 +51,11 @@ contract IdentityShapeshifter is Ownable {
     event SwapExecuted(bytes32 indexed identityId, address inputToken, address outputToken);
 
     /**
-     * @dev Create a new identity/persona with encrypted data
+     * @dev Create a new identity/persona. On Sapphire, state is encrypted at rest,
+     * so we can store metadata directly. If client-side encryption is desired,
+     * encrypt off-chain and pass the ciphertext here.
      * @param name Name of the identity
-     * @param metadata Metadata about the identity to be encrypted
+     * @param metadata Opaque metadata about the identity
      * @return identityId The ID of the created identity
      */
     function createIdentity(string memory name, bytes memory metadata) public returns (bytes32) {
@@ -62,10 +64,11 @@ contract IdentityShapeshifter is Ownable {
         
         require(!identities[msg.sender][identityId].exists, "Identity already exists");
         
-        // Encrypt the metadata using Sapphire's confidential storage
-        bytes memory encryptedData = metadata.encrypt();
+        // Store the metadata as-is. Sapphire ensures confidentiality in storage.
+        // If you need additional confidentiality layers, encrypt off-chain.
+        bytes memory encryptedData = metadata;
         
-        // Store the identity with encrypted data
+        // Store the identity with data
         identities[msg.sender][identityId] = Identity({
             name: name,
             encryptedData: encryptedData,
@@ -170,20 +173,20 @@ contract IdentityShapeshifter is Ownable {
     }
 
     /**
-     * @dev Get identity details with decryption
+     * @dev Get identity details
      * @param identityId ID of the identity
      * @return name Name of the identity
-     * @return metadata Decrypted metadata about the identity
+     * @return metadata Metadata about the identity (opaque)
      */
     function getIdentity(bytes32 identityId) public view returns (string memory, bytes memory) {
         require(identities[msg.sender][identityId].exists, "Identity does not exist");
         
         Identity memory identity = identities[msg.sender][identityId];
         
-        // Decrypt the data using Sapphire's confidential storage
-        bytes memory decryptedData = identity.encryptedData.decrypt();
+        // On Sapphire, storage is confidential; return as-is
+        bytes memory data = identity.encryptedData;
         
-        return (identity.name, decryptedData);
+        return (identity.name, data);
     }
 
     /**
@@ -213,9 +216,8 @@ contract IdentityShapeshifter is Ownable {
      * This function allows a user to switch personas during a trade flow,
      * effectively splitting the trade history across multiple personas
      * @param identityId New identity to switch to
-     * @param continueSwap Whether to continue with an ongoing swap
      */
-    function midTradeSwitch(bytes32 identityId, bool continueSwap) public {
+    function midTradeSwitch(bytes32 identityId, bool /* continueSwap */) public {
         require(identities[msg.sender][identityId].exists, "Identity does not exist");
         
         // Switch to the new identity

@@ -1,4 +1,12 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
+
+const normalizeAccounts = () => {
+  const pk = process.env.PRIVATE_KEY;
+  if (!pk) return [];
+  const with0x = pk.startsWith('0x') ? pk : `0x${pk}`;
+  return [with0x];
+};
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -6,14 +14,14 @@ module.exports = {
   networks: {
     // Oasis Sapphire Testnet
     sapphire: {
-      url: "https://testnet.sapphire.oasis.dev",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.SAPPHIRE_TESTNET_URL || "https://testnet.sapphire.oasis.dev",
+      accounts: normalizeAccounts(),
       chainId: 23295,
     },
     // Oasis Sapphire Mainnet
     sapphireMain: {
-      url: "https://sapphire.oasis.io",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.SAPPHIRE_MAINNET_URL || "https://sapphire.oasis.io",
+      accounts: normalizeAccounts(),
       chainId: 23294,
     },
     localhost: {
