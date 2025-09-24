@@ -3,13 +3,19 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@oasisprotocol/sapphire-contracts/contracts/Sapphire.sol";
+// Added for ERC20 safety and reentrancy protection
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./interfaces/ISwapRouter.sol";
 
 /**
  * @title IdentityShapeshifter
  * @dev Smart contract for managing private personas on Oasis Sapphire
  * Utilizes Sapphire's confidential computation features for privacy
  */
-contract IdentityShapeshifter is Ownable {
+contract IdentityShapeshifter is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     // Use Sapphire's encryption utilities
     // using Sapphire for bytes;
     // using Sapphire for bytes32;
@@ -31,6 +37,10 @@ contract IdentityShapeshifter is Ownable {
         uint256 timestamp;
     }
 
+    // Uniswap V3 router configuration
+    address public swapRouter; // zero means "simulation mode" for local dev/tests
+    uint24 public poolFee = 3000; // default 0.3%
+
     // Mapping from user address => identity ID => Identity
     // All identity data is kept confidential on the Sapphire ParaTime
     mapping(address => mapping(bytes32 => Identity)) private identities;
@@ -49,6 +59,25 @@ contract IdentityShapeshifter is Ownable {
     event IdentityCreated(address indexed user, bytes32 indexed identityId);
     event ActiveIdentityChanged(address indexed user, bytes32 indexed identityId);
     event SwapExecuted(bytes32 indexed identityId, address inputToken, address outputToken);
+
+    // Admin events (non-sensitive)
+    event RouterConfigured(address router, uint24 fee);
+
+    /**
+     * @dev Optional initializer to set router and default pool fee later via owner functions.
+     * Keeping empty constructor preserves existing deploy scripts.
+     */
+    constructor() {}
+
+    /**
+     * @dev Owner can set or update the Uniswap V3 router and fee. Setting router to address(0)
+     * enables simulation mode for environments without a router (e.g., unit tests).
+     */
+    function setSwapRouter(address _router, uint24 _fee) external onlyOwner {
+        swapRouter = _router;
+        poolFee = _fee;
+        emit RouterConfigured(_router, _fee);
+    }
 
     /**
      * @dev Create a new identity/persona. On Sapphire, state is encrypted at rest,
@@ -112,20 +141,46 @@ contract IdentityShapeshifter is Ownable {
         address outputToken,
         uint256 amountIn,
         uint256 minAmountOut
-    ) public returns (uint256) {
+    ) public nonReentrant returns (uint256) {
         // Get the active persona/identity for this transaction
         bytes32 identityId = activeIdentities[msg.sender];
         require(identityId != bytes32(0), "No active identity");
+        require(inputToken != address(0) && outputToken != address(0), "Invalid token");
+        require(inputToken != outputToken, "Tokens must differ");
+        require(amountIn > 0, "amountIn=0");
         
         // The following operations occur inside Oasis Sapphire's confidential execution environment
         // This means transaction details are hidden from public view
         
-        // INTEGRATION NOTE: In a production implementation, we would
-        // integrate with Uniswap Router contract here to perform the actual swap
-        
-        // For MVP demo purposes, simulate a swap with a mocked return value
-        uint256 amountOut = amountIn * 98 / 100; // Simulated 2% slippage
-        require(amountOut >= minAmountOut, "Slippage too high");
+        uint256 amountOut;
+        if (swapRouter == address(0)) {
+            // Simulation mode (no router configured): maintain existing demo behavior
+            amountOut = (amountIn * 98) / 100; // Simulated 2% slippage
+            require(amountOut >= minAmountOut, "Slippage too high");
+        } else {
+            // Pull tokens from user (user must approve this contract for amountIn)
+            IERC20(inputToken).safeTransferFrom(msg.sender, address(this), amountIn);
+
+            // Approve router exactly for amountIn
+            IERC20(inputToken).forceApprove(swapRouter, amountIn);
+
+            // Execute Uniswap V3 exactInputSingle
+            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+                tokenIn: inputToken,
+                tokenOut: outputToken,
+                fee: poolFee,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: amountIn,
+                amountOutMinimum: minAmountOut,
+                sqrtPriceLimitX96: 0
+            });
+
+            amountOut = ISwapRouter(swapRouter).exactInputSingle(params);
+
+            // Forward output tokens to the user
+            IERC20(outputToken).safeTransfer(msg.sender, amountOut);
+        }
         
         // Log the swap under the active identity - this history is confidential
         // and can only be accessed by the wallet owner

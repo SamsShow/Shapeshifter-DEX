@@ -30,6 +30,18 @@ async function main() {
 
   console.log(`IdentityShapeshifter deployed to: ${identityShapeshifter.address}`);
   console.log("Transaction hash:", identityShapeshifter.deployTransaction.hash);
+
+  // Optional: configure Uniswap V3 router
+  const router = process.env.UNISWAP_V3_ROUTER;
+  const fee = parseInt(process.env.UNISWAP_V3_FEE || '3000', 10);
+  if (router && router !== '0x0000000000000000000000000000000000000000') {
+    console.log(`Configuring router ${router} with fee ${fee}...`);
+    const tx = await identityShapeshifter.setSwapRouter(router, fee);
+    await tx.wait();
+    console.log('Router configured.');
+  } else {
+    console.log('UNISWAP_V3_ROUTER not set; running in simulation mode by default.');
+  }
   
   console.log("\n-------------------------------------------------------");
   console.log("Contract deployment completed successfully!");

@@ -7,9 +7,17 @@ const { ethers } = require("hardhat");
 
 describe("IdentityShapeshifter", function () {
   let Contract, contract, owner, other;
+  let tokenA, tokenB;
 
   beforeEach(async function () {
     [owner, other] = await ethers.getSigners();
+    // Deploy mock tokens for address placeholders
+    const Mock = await ethers.getContractFactory("MockERC20");
+    tokenA = await Mock.deploy("TokenA", "TKA", 18);
+    await tokenA.deployed();
+    tokenB = await Mock.deploy("TokenB", "TKB", 18);
+    await tokenB.deployed();
+
     Contract = await ethers.getContractFactory("IdentityShapeshifter");
     contract = await Contract.deploy();
     await contract.deployed();
@@ -45,13 +53,37 @@ describe("IdentityShapeshifter", function () {
     const minOutOk = ethers.BigNumber.from(amountIn).mul(98).div(100);
     const minOutTooHigh = minOutOk.add(1);
 
-    // ok path
-    await expect(contract.swapTokens(ethers.constants.AddressZero, ethers.constants.AddressZero, amountIn, minOutOk))
-      .to.emit(contract, 'SwapExecuted');
+    // ok path (simulation mode because router is unset)
+    await expect(
+      contract.swapTokens(tokenA.address, tokenB.address, amountIn, minOutOk)
+    ).to.emit(contract, 'SwapExecuted');
 
     // slippage revert
     await expect(
-      contract.swapTokens(ethers.constants.AddressZero, ethers.constants.AddressZero, amountIn, minOutTooHigh)
+      contract.swapTokens(tokenA.address, tokenB.address, amountIn, minOutTooHigh)
     ).to.be.revertedWith('Slippage too high');
+  });
+
+  it("supports swaps under different personas (simulation mode)", async function () {
+    // Create two personas
+    await (await contract.createIdentity("Alice", ethers.utils.toUtf8Bytes("x"))).wait();
+    await (await contract.createIdentity("Bob", ethers.utils.toUtf8Bytes("y"))).wait();
+    const all = await contract.getIdentityIds();
+
+    // Swap under persona 1
+    await contract.switchIdentity(all[0]);
+    const amountIn = ethers.BigNumber.from(1000);
+    const minOut = amountIn.mul(98).div(100);
+    await expect(contract.swapTokens(tokenA.address, tokenB.address, amountIn, minOut)).to.emit(contract,'SwapExecuted');
+
+    // Swap under persona 2
+    await contract.switchIdentity(all[1]);
+    await expect(contract.swapTokens(tokenA.address, tokenB.address, amountIn, minOut)).to.emit(contract,'SwapExecuted');
+
+    // Fetch histories (confidential on Sapphire; here accessible for test owner)
+    const h1 = await contract.getSwapHistory(all[0]);
+    const h2 = await contract.getSwapHistory(all[1]);
+    expect(h1.length).to.equal(1);
+    expect(h2.length).to.equal(1);
   });
 });
